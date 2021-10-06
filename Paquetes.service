@@ -1,0 +1,22 @@
+[Unit]
+Description= Servicio capturador de paquetes.
+ConditionPathExists=/home/wimpuser/services/paquetesService
+After=network.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+
+WorkingDirectory=/home/wimpuser/services
+ExecStart=/home/wimpuser/services/paquetesService
+
+Restart=on-failure
+RestartSec=10
+
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=Servicio
+
+[Install]
+WantedBy=multi-user.target

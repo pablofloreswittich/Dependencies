@@ -1,0 +1,4 @@
+//Copiar y pegar paqueteService en /home/wimpuser/services/
+//Copiar y pegar paquete.Service en /etc/systemd/system
+//Correr en consola sudo service paqueteService start
+//Correr en consola sudo service paqueteService status

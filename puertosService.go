@@ -128,38 +128,38 @@ func main() {
 				}
 
 			}
-			//} corta el lazo switches
-			fmt.Println(arrSw.Ports)
+		} //corta el lazo switches
+		fmt.Println(arrSw.Ports)
 
-			/* Configuracion para insertar en la BD */
-			//client, err := mongo.NewClient(options.Client().ApplyURI("mongodb+srv://juantuc98:juantuc98@db-wimp.yeslm.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"))
-			client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://localhost:27017"))
-			if err != nil {
-				log.Fatal(err)
-			}
-			ctx := context.Background()
-			err = client.Connect(ctx)
-			db := client.Database("wimp")
-			col := db.Collection("switches")
-			opts := options.Update().SetUpsert(true)
-			filter := bson.D{{"mac", macswitchactual}}
-			update := bson.D{
-				{"$set",
-					bson.D{
-						{"clients", qty.NumClients},
-						{"aps", qty.NumAp},
-						{"ports", arrSw.Ports},
-					},
-				},
-			}
-			if err != nil {
-				log.Fatal(err)
-			}
-			result, err := col.UpdateOne(ctx, filter, update, opts)
-			/* fmt.Println(err) */
-			fmt.Println(result)
-
-			time.Sleep(60 * time.Second)
+		/* Configuracion para insertar en la BD */
+		//client, err := mongo.NewClient(options.Client().ApplyURI("mongodb+srv://juantuc98:juantuc98@db-wimp.yeslm.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"))
+		client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://localhost:27017"))
+		if err != nil {
+			log.Fatal(err)
 		}
+		ctx := context.Background()
+		err = client.Connect(ctx)
+		db := client.Database("wimp")
+		col := db.Collection("switches")
+		opts := options.Update().SetUpsert(true)
+		filter := bson.D{{"mac", macswitchactual}}
+		update := bson.D{
+			{"$set",
+				bson.D{
+					{"clients", qty.NumClients},
+					{"aps", qty.NumAp},
+					{"ports", arrSw},
+				},
+			},
+		}
+		if err != nil {
+			log.Fatal(err)
+		}
+		result, err := col.UpdateOne(ctx, filter, update, opts)
+		/* fmt.Println(err) */
+		fmt.Println(result)
+
+		time.Sleep(60 * time.Second)
 	}
+
 }

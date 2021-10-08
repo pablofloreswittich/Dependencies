@@ -77,6 +77,7 @@ func main() {
 
 		for y, switchi := range switches {
 			macswitchactual = switchi.Mac
+			fmt.Println(y)
 
 			for i := 0; i < qty.NumAp; i++ {
 				if macswitchactual == devices.UAPs[i].LastUplink.UplinkMac { //(mac del sw proximo)

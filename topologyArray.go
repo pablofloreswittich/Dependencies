@@ -16,6 +16,11 @@ type Qty struct {
 	NumAp      int
 }
 
+//NetSws
+type NetSws struct {
+	NetSw []NetSw
+}
+
 type NetSw struct {
 	Ports []InfoPort
 }
@@ -67,7 +72,8 @@ func main() {
 			log.Fatalln("Error:", err)
 		}
 		var Indice int
-		var arrSw []NetSw
+		var arrSwreal NetSws
+
 		var qty Qty
 		var macswitchactual string
 		qty.NumClients = len(clients)
@@ -75,6 +81,7 @@ func main() {
 		switches := devices.USWs
 
 		for y, switchi := range switches {
+			var arrSw NetSw
 			macswitchactual = switchi.Mac
 
 			for i := 0; i < qty.NumAp; i++ {
@@ -89,7 +96,7 @@ func main() {
 					info.Mem = int((float32(devices.UAPs[i].SysStats.MemUsed.Val) / float32(devices.UAPs[i].SysStats.MemTotal.Val)) * 100)
 					info.Num = int(devices.UAPs[i].LastUplink.UplinkRemotePort)
 					/* 		fmt.Println("Mac arriba de AP", devices.UAPs[i].LastUplink.UplinkMac) */
-					arrSw[y].Ports = append(arrSw[y].Ports, info)
+					arrSw.Ports = append(arrSw.Ports, info)
 				}
 			}
 
@@ -107,19 +114,19 @@ func main() {
 					info2.Ip = clients[i].IP
 
 					if clients[i].ApMac != "" {
-						for u, elemento := range arrSw[y].Ports {
+						for u, elemento := range arrSw.Ports {
 							if clients[i].ApMac == elemento.Mac {
 								Indice = u
 								break
 							}
 						}
 
-						arrSw[y].Ports[Indice].ClientesAp = append(arrSw[y].Ports[Indice].ClientesAp, info2)
+						arrSw.Ports[Indice].ClientesAp = append(arrSw.Ports[Indice].ClientesAp, info2)
 					} else {
 						// si no esta vinculado a un AP -> esta vinculado a un sw
 						//if macswitchactual == clients[i].SwMac (mac del sw proximo)
 
-						arrSw[y].Ports = append(arrSw[y].Ports, info)
+						arrSw.Ports = append(arrSw.Ports, info)
 						//else
 						//continue
 					}
@@ -127,8 +134,11 @@ func main() {
 				}
 
 			}
+
+			arrSwreal.NetSw = append(arrSwreal.NetSw, arrSw)
+
 		} //corta el lazo switches
-		fmt.Println(arrSw)
+		fmt.Println(arrSwreal)
 
 		/* Configuracion para insertar en la BD */
 		client, err := mongo.NewClient(options.Client().ApplyURI("mongodb+srv://juantuc98:juantuc98@db-wimp.yeslm.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"))
@@ -151,7 +161,7 @@ func main() {
 		// 		},
 		// 	},
 		// }
-		result, err := col.InsertOne(ctx, arrSw)
+		result, err := col.InsertOne(ctx, arrSwreal)
 		if err != nil {
 			log.Fatal(err)
 			fmt.Println(err)

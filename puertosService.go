@@ -133,8 +133,8 @@ func main() {
 		fmt.Println(arrSw.Ports)
 
 		/* Configuracion para insertar en la BD */
-		//client, err := mongo.NewClient(options.Client().ApplyURI("mongodb+srv://juantuc98:juantuc98@db-wimp.yeslm.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"))
-		client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://localhost:27017"))
+		client, err := mongo.NewClient(options.Client().ApplyURI("mongodb+srv://juantuc98:juantuc98@db-wimp.yeslm.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"))
+		//client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://localhost:27017"))
 		if err != nil {
 			log.Fatal(err)
 		}

@@ -7,13 +7,16 @@ import (
 	"time"
 
 	"github.com/unpoller/unifi"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type Qty struct {
-	NumClients int
-	NumAp      int
+	NumClients int `bson:"numclients,omitempty,minsize"`
+	NumAps     int `bson:"numaps,omitempty,minsize"`
+	NumSws     int `bson:"numsws,omitempty,minsize"`
+	NumUsgs    int `bson:"numusgs,omitempty,minsize"`
 }
 
 //NetSws
@@ -84,17 +87,20 @@ func main() {
 		}
 		var Indice int
 		var arrSwreal NetSws
-
+		var ident int
 		var qty Qty
 		var macswitchactual string
 		qty.NumClients = len(clients)
-		qty.NumAp = len(devices.UAPs)
+		qty.NumAps = len(devices.UAPs)
+		qty.NumSws = len(devices.USWs)
+		qty.NumUsgs = len(devices.USGs)
+		ident = 27017
+
 		switches := devices.USWs
 
 		for y, switchi := range switches {
 			var arrSw NetSw
 			macswitchactual = switchi.Mac
-
 			arrSw.CPU = int(switchi.SystemStats.CPU.Val)
 			arrSw.Temp = int(switchi.GeneralTemperature.Val)
 			arrSw.Uptime = int(switchi.SystemStats.Uptime.Val)
@@ -107,7 +113,7 @@ func main() {
 			arrSw.Version = switchi.Version
 			arrSw.Timestamp = time.Now()
 
-			for i := 0; i < qty.NumAp; i++ {
+			for i := 0; i < qty.NumAps; i++ {
 				if macswitchactual == devices.UAPs[i].LastUplink.UplinkMac { //(mac del sw proximo)
 					var info InfoPort
 					info.Mac = devices.UAPs[i].Mac
@@ -159,7 +165,9 @@ func main() {
 			}
 
 			arrSwreal.NetSw = append(arrSwreal.NetSw, arrSw)
-			fmt.Println(y)
+			if y == 9999 {
+				fmt.Println(y)
+			}
 
 		} //corta el lazo switches
 		fmt.Println(arrSwreal)
@@ -174,24 +182,27 @@ func main() {
 		err = client.Connect(ctx)
 		db := client.Database("wimp")
 		col := db.Collection("topologia")
-		//opts := options.Update().SetUpsert(true)
-		// filter := bson.D{{"mac", macswitchactual}}
-		// update := bson.D{
-		// 	{"$set",
-		// 		bson.D{
-		// 			{"clients", qty.NumClients},
-		// 			{"aps", qty.NumAp},
-		// 			{"ports", arrSw.Ports},
-		// 		},
-		// 	},
-		// }
-		result, err := col.InsertOne(ctx, arrSwreal)
+		opts := options.Update().SetUpsert(true)
+		filter := bson.D{{"ident", ident}}
+		update := bson.D{
+			{"$set",
+				bson.D{
+					{"ident", ident},
+					{"numclients", qty.NumClients},
+					{"numsws", qty.NumSws},
+					{"numaps", qty.NumAps},
+					{"numusgs", qty.NumUsgs},
+					{"netsws", arrSwreal},
+				},
+			},
+		}
+		// result, err := col.InsertOne(ctx, arrSwreal)
+
+		result, err := col.UpdateOne(ctx, filter, update, opts)
 		if err != nil {
 			log.Fatal(err)
 			fmt.Println(err)
 		}
-		//result, err := col.UpdateOne(ctx, filter, update, opts)
-		/* fmt.Println(err) */
 		fmt.Println(result)
 
 		time.Sleep(60 * time.Second)

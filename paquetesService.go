@@ -58,11 +58,26 @@ func main() {
 	}
 	fmt.Println("Only capturing MAC dst 00:1b:24:3e:0b:d3 packets.")
 
+	/* Configuracion para insertar en la BD */
+	//client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://localhost:27017"))
+	client, err := mongo.NewClient(options.Client().ApplyURI("mongodb+srv://juantuc98:juantuc98@db-wimp.yeslm.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"))
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	/* 		ctx, _ := context.WithTimeout(context.Background(), 10*time.Second) */
+	ctx := context.Background()
+	err = client.Connect(ctx)
+	db := client.Database("wimp")
+	col := db.Collection("paquetes")
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	/* Iteramos en las capas de los paquetes para sacar informacion. */
 	packetSource := gopacket.NewPacketSource(handle, handle.LinkType())
 	for packet := range packetSource.Packets() {
 		var p paquete
-		fmt.Println("toy aqui")
 		/* Acceso a la red */
 		ethernetLayer := packet.Layer(layers.LayerTypeEthernet)
 		if ethernetLayer != nil {
@@ -100,21 +115,7 @@ func main() {
 				p.ProtoApp = udp.NextLayerType().String()
 			}
 		}
-		/* Configuracion para insertar en la BD */
-		//client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://localhost:27017"))
-		client, err := mongo.NewClient(options.Client().ApplyURI("mongodb+srv://juantuc98:juantuc98@db-wimp.yeslm.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"))
 
-		if err != nil {
-			log.Fatal(err)
-		}
-		/* 		ctx, _ := context.WithTimeout(context.Background(), 10*time.Second) */
-		ctx := context.Background()
-		err = client.Connect(ctx)
-		db := client.Database("wimp")
-		col := db.Collection("paquetes")
-		if err != nil {
-			log.Fatal(err)
-		}
 		result, err := col.InsertOne(ctx, p)
 		if err != nil {
 			fmt.Println(err)

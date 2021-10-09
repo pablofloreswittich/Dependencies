@@ -31,6 +31,18 @@ func main() {
 		log.Fatalln("Error:", err)
 	}
 
+	client, err := mongo.NewClient(options.Client().ApplyURI("mongodb+srv://juantuc98:juantuc98@db-wimp.yeslm.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	ctx := context.Background()
+	err = client.Connect(ctx)
+	db := client.Database("wimp")
+	col := db.Collection("alertas")
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	for {
 
 		sites, err := uni.GetSites()
@@ -43,31 +55,24 @@ func main() {
 			log.Fatalln("Error:", err)
 		}
 
+		/* Configuracion para insertar en la BD */
+		//			client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://localhost:27017"))
+
 		for i := 0; i < len(alarmas); i++ {
 			var a alarma
 			a.Evento = alarmas[i].Key
 			a.Mensaje = alarmas[i].Msg
 			a.Timestamp = alarmas[i].Datetime
 
-			/* Configuracion para insertar en la BD */
-			client, err := mongo.NewClient(options.Client().ApplyURI("mongodb+srv://juantuc98:juantuc98@db-wimp.yeslm.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"))
-
-			//			client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://localhost:27017"))
-			if err != nil {
-				log.Fatal(err)
-			}
-			/* ctx, _ := context.WithTimeout(context.Background(), 10*time.Second) */
-			ctx := context.Background()
-			err = client.Connect(ctx)
-			db := client.Database("wimp")
-			col := db.Collection("alertas")
-			if err != nil {
-				log.Fatal(err)
-			}
 			result, err := col.InsertOne(ctx, a)
-
+			if err != nil {
+				log.Fatal(err)
+			}
 			fmt.Println(result)
 		}
 		time.Sleep(60 * time.Second)
 	}
+	//Cerrar coneccion mongo
+	err = client.Disconnect()
+
 }

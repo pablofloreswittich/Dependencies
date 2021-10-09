@@ -73,6 +73,6 @@ func main() {
 		time.Sleep(60 * time.Second)
 	}
 	//Cerrar coneccion mongo
-	err = client.Disconnect()
+	err = client.Disconnect(ctx)
 
 }

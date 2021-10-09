@@ -12,10 +12,9 @@ import (
 )
 
 type anomalia struct {
-	Datetime   time.Time `bson:"timestamp,omitempty,minsize"`
-	SourceName string    `bson:"src,omitempty,minsize"`
-	Anomaly    string    `bson:"anomaly,omitempty,minsize"`
-	DeviceMAC  string    `bson:"mac,omitempty,minsize"`
+	Datetime  time.Time `bson:"timestamp,omitempty,minsize"`
+	Anomaly   string    `bson:"anomaly,omitempty,minsize"`
+	DeviceMAC string    `bson:"mac,omitempty,minsize"`
 }
 
 func main() {
@@ -61,7 +60,6 @@ func main() {
 		for i := 0; i < len(anomalias); i++ {
 			var a anomalia
 			a.Datetime = anomalias[i].Datetime
-			a.SourceName = anomalias[i].SourceName
 			a.Anomaly = anomalias[i].Anomaly
 			a.DeviceMAC = anomalias[i].DeviceMAC
 

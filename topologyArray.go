@@ -18,11 +18,22 @@ type Qty struct {
 
 //NetSws
 type NetSws struct {
-	NetSw []NetSw
+	NetSw []NetSw `bson:"netsws,omitempty,minsize"`
 }
 
 type NetSw struct {
-	Ports []InfoPort
+	CPU       int        `bson:"cpu,omitempty,minsize"`
+	Temp      int        `bson:"temp,omitempty,minsize"`
+	Uptime    int        `bson:"uptime,omitempty,minsize"`
+	FanLevel  int        `bson:"fanlevel,omitempty,minsize"`
+	Mem       int        `bson:"mem,omitempty,minsize"`
+	Ip        string     `bson:"ip,omitempty,minsize"`
+	MAC       string     `bson:"mac,omitempty,minsize"`
+	Model     string     `bson:"model,omitempty,minsize"`
+	Name      string     `bson:"name,omitempty,minsize"`
+	Version   string     `bson:"version,omitempty,minsize"`
+	Timestamp time.Time  `bson:"timestamp,omitempty,minsize"`
+	Ports     []InfoPort `bson:"ports,omitempty,minsize"`
 }
 
 type InfoPort struct {
@@ -83,6 +94,18 @@ func main() {
 		for y, switchi := range switches {
 			var arrSw NetSw
 			macswitchactual = switchi.Mac
+
+			arrSw.CPU = int(switchi.SystemStats.CPU.Val)
+			arrSw.Temp = int(switchi.GeneralTemperature.Val)
+			arrSw.Uptime = int(switchi.SystemStats.Uptime.Val)
+			arrSw.FanLevel = int(switchi.FanLevel.Val)
+			arrSw.Mem = int((float32(switchi.SysStats.MemUsed.Val) / float32(switchi.SysStats.MemTotal.Val)) * 100)
+			arrSw.Ip = switchi.IP
+			arrSw.MAC = switchi.Mac
+			arrSw.Model = switchi.Model
+			arrSw.Name = switchi.Name
+			arrSw.Version = switchi.Version
+			arrSw.Timestamp = time.Now()
 
 			for i := 0; i < qty.NumAp; i++ {
 				if macswitchactual == devices.UAPs[i].LastUplink.UplinkMac { //(mac del sw proximo)

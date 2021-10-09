@@ -159,6 +159,7 @@ func main() {
 			}
 
 			arrSwreal.NetSw = append(arrSwreal.NetSw, arrSw)
+			fmt.Println(y)
 
 		} //corta el lazo switches
 		fmt.Println(arrSwreal)

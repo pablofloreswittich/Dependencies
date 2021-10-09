@@ -62,7 +62,6 @@ func main() {
 			var a anomalia
 			a.Datetime = anomalias[i].Datetime
 			a.SourceName = anomalias[i].SourceName
-			a.SiteName = anomalias[i].SiteName
 			a.Anomaly = anomalias[i].Anomaly
 			a.DeviceMAC = anomalias[i].DeviceMAC
 

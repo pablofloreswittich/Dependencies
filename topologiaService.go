@@ -70,6 +70,18 @@ func main() {
 		log.Fatalln("Error:", err)
 	}
 
+	/* Configuracion para insertar en la BD */
+	client, err := mongo.NewClient(options.Client().ApplyURI("mongodb+srv://juantuc98:juantuc98@db-wimp.yeslm.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"))
+	//client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://localhost:27017"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	ctx := context.Background()
+	err = client.Connect(ctx)
+	db := client.Database("wimp")
+	col := db.Collection("topologia")
+	opts := options.Update().SetUpsert(true)
+
 	for {
 		sites, err := uni.GetSites()
 		if err != nil {
@@ -85,6 +97,7 @@ func main() {
 		if err != nil {
 			log.Fatalln("Error:", err)
 		}
+
 		var Indice int
 		var arrSwreal NetSws
 		var ident int
@@ -172,17 +185,6 @@ func main() {
 		} //corta el lazo switches
 		fmt.Println(arrSwreal)
 
-		/* Configuracion para insertar en la BD */
-		client, err := mongo.NewClient(options.Client().ApplyURI("mongodb+srv://juantuc98:juantuc98@db-wimp.yeslm.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"))
-		//client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://localhost:27017"))
-		if err != nil {
-			log.Fatal(err)
-		}
-		ctx := context.Background()
-		err = client.Connect(ctx)
-		db := client.Database("wimp")
-		col := db.Collection("topologia")
-		opts := options.Update().SetUpsert(true)
 		filter := bson.D{{"ident", ident}}
 		update := bson.D{
 			{"$set",

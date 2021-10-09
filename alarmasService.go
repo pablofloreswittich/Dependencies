@@ -66,7 +66,7 @@ func main() {
 
 			result, err := col.InsertOne(ctx, a)
 			if err != nil {
-				log.Fatal(err)
+				fmt.Println(err)
 			}
 			fmt.Println(result)
 		}

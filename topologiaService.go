@@ -207,7 +207,7 @@ func main() {
 		}
 		fmt.Println(result)
 
-		//time.Sleep(60 * time.Second)
+		time.Sleep(60 * time.Second)
 	}
 	client.Disconnect(ctx)
 }

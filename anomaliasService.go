@@ -1,20 +1,19 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"time"
 
 	"github.com/unpoller/unifi"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type alarma struct {
-	Evento    string    `bson:"evento,omitempty,minsize"`
-	Mensaje   string    `bson:"mensaje,omitempty,minsize"`
-	Timestamp time.Time `bson:"timestamp,omitempty,minsize"`
+type anomalia struct {
+	Datetime   time.Time
+	SourceName string
+	SiteName   string
+	Anomaly    string
+	DeviceMAC  string
 }
 
 func main() {
@@ -31,17 +30,17 @@ func main() {
 		log.Fatalln("Error:", err)
 	}
 
-	client, err := mongo.NewClient(options.Client().ApplyURI("mongodb+srv://juantuc98:juantuc98@db-wimp.yeslm.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	ctx := context.Background()
-	err = client.Connect(ctx)
-	db := client.Database("wimp")
-	col := db.Collection("alertas")
-	if err != nil {
-		log.Fatal(err)
-	}
+	// client, err := mongo.NewClient(options.Client().ApplyURI("mongodb+srv://juantuc98:juantuc98@db-wimp.yeslm.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"))
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// ctx := context.Background()
+	// err = client.Connect(ctx)
+	// db := client.Database("wimp")
+	// col := db.Collection("alertas")
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
 
 	for {
 
@@ -50,7 +49,7 @@ func main() {
 			log.Fatalln("Error:", err)
 		}
 
-		alarmas, err := uni.GetAlarms(sites)
+		anomalias, err := uni.GetAnomalies(sites)
 		if err != nil {
 			log.Fatalln("Error:", err)
 		}
@@ -58,21 +57,25 @@ func main() {
 		/* Configuracion para insertar en la BD */
 		//			client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://localhost:27017"))
 
-		for i := 0; i < len(alarmas); i++ {
-			var a alarma
-			a.Evento = alarmas[i].Key
-			a.Mensaje = alarmas[i].Msg
-			a.Timestamp = alarmas[i].Datetime
+		for i := 0; i < len(anomalias); i++ {
+			var a anomalia
+			a.Datetime = anomalias[i].Datetime
+			a.SourceName = anomalias[i].SourceName
+			a.SiteName = anomalias[i].SiteName
+			a.Anomaly = anomalias[i].Anomaly
+			a.DeviceMAC = anomalias[i].DeviceMAC
 
-			result, err := col.InsertOne(ctx, a)
-			if err != nil {
-				fmt.Println(err)
-			}
-			fmt.Println(result)
+			// result, err := col.InsertOne(ctx, a)
+			// if err != nil {
+			// 	fmt.Println(err)
+			// }
+			// fmt.Println(result)
+
+			fmt.Println(a)
 		}
 		time.Sleep(60 * time.Second)
 	}
 	//Cerrar coneccion mongo
-	err = client.Disconnect(ctx)
+	//err = client.Disconnect(ctx)
 
 }

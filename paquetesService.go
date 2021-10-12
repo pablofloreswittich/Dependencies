@@ -17,14 +17,12 @@ import (
 var (
 	device         string        = "enp0s8" //me estoy conectando por la interfaz del server
 	snapshot_len   int32         = 1024
-	promiscuous    bool          = false
-	timeout        time.Duration = -1 * time.Second
-	pcapFile       string        = "test.pcap"
+	promiscuous    bool          = true
+	timeout        time.Duration = 10 * time.Second
 	handle         *pcap.Handle
 	err            error
 	snapshotLenuuu uint32 = 1024
 	//le puse otra variable por las compatibilidades que presenta con las funciones de abajo
-	packetCount int = 0
 )
 
 type paquete struct {
@@ -51,12 +49,12 @@ func main() {
 	defer handle.Close()
 
 	/* Seteamos el filtro de captura */
-	var filter string = "net 172.16 and ether dst not ff:ff:ff:ff:ff:ff"
+	var filter string = "ether dst 78:8a:20:47:8c:62"
 	err = handle.SetBPFFilter(filter)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("Only capturing MAC dst 00:1b:24:3e:0b:d3 packets.")
+	fmt.Println("Capturando paquetes con MAC dst 78:8a:20:47:8c:62")
 
 	/* Configuracion para insertar en la BD */
 	//client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://localhost:27017"))
@@ -115,7 +113,8 @@ func main() {
 				p.ProtoApp = udp.NextLayerType().String()
 			}
 		}
-
+		 //fmt.Println(packet)
+		//fmt.Println(p)
 		result, err := col.InsertOne(ctx, p)
 		if err != nil {
 			fmt.Println(err)

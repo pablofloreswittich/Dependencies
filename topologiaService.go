@@ -37,6 +37,7 @@ type NetSw struct {
 	Version   string     `bson:"version,omitempty,minsize"`
 	Timestamp time.Time  `bson:"timestamp,omitempty,minsize"`
 	Ports     []InfoPort `bson:"ports,omitempty,minsize"`
+	Tipo      string     `bson:"tipo,omitempty,minsize"`
 }
 
 type InfoPort struct {
@@ -49,6 +50,7 @@ type InfoPort struct {
 	CPU        int       `bson:"cpu,omitempty,minsize"`
 	Mem        int       `bson:"mem,omitempty,minsize"`
 	ClientesAp []Puertos `bson:"clientesap,omitempty,minsize"`
+	Tipo       string    `bson:"tipo,omitempty,minsize"`
 }
 
 type Puertos struct {
@@ -125,6 +127,7 @@ func main() {
 			arrSw.Name = switchi.Name
 			arrSw.Version = switchi.Version
 			arrSw.Timestamp = time.Now()
+			arrSw.Tipo = "SW"
 
 			for i := 0; i < qty.NumAps; i++ {
 				if macswitchactual == devices.UAPs[i].LastUplink.UplinkMac { //(mac del sw proximo)
@@ -137,6 +140,7 @@ func main() {
 					info.CPU = int(devices.UAPs[i].SystemStats.CPU.Val)
 					info.Mem = int((float32(devices.UAPs[i].SysStats.MemUsed.Val) / float32(devices.UAPs[i].SysStats.MemTotal.Val)) * 100)
 					info.Num = int(devices.UAPs[i].LastUplink.UplinkRemotePort)
+					info.Tipo = "AP"
 					/* 		fmt.Println("Mac arriba de AP", devices.UAPs[i].LastUplink.UplinkMac) */
 					arrSw.Ports = append(arrSw.Ports, info)
 				}
@@ -154,7 +158,6 @@ func main() {
 					info.Num = int(clients[i].SwPort.Val)
 					info2.Mac = clients[i].Mac
 					info2.Ip = clients[i].IP
-
 					if clients[i].ApMac != "" {
 						for u, elemento := range arrSw.Ports {
 							if clients[i].ApMac == elemento.Mac {
@@ -162,8 +165,9 @@ func main() {
 								break
 							}
 						}
-
-						arrSw.Ports[Indice].ClientesAp = append(arrSw.Ports[Indice].ClientesAp, info2)
+						if len(arrSw.Ports) > Indice {
+							arrSw.Ports[Indice].ClientesAp = append(arrSw.Ports[Indice].ClientesAp, info2)
+						}
 					} else {
 						// si no esta vinculado a un AP -> esta vinculado a un sw
 						//if macswitchactual == clients[i].SwMac (mac del sw proximo)

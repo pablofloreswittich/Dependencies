@@ -32,16 +32,28 @@ func main() {
 		Pass: "wimp.2021",
 		URL:  "https://unifi.unt.edu.ar:8443",
 		// Log with log.Printf or make your own interface that accepts (msg, fmt)
-		ErrorLog: log.Printf,
-		DebugLog: log.Printf,
+		/* ErrorLog: log.Printf, */
+		/* DebugLog: log.Printf, */
 	}
 	uni, err := unifi.NewUnifi(&c)
 	if err != nil {
 		log.Fatalln("Error:", err)
 	}
 
-	for {
+	/* Configuracion para insertar en la BD */
+	client, err := mongo.NewClient(options.Client().ApplyURI("mongodb+srv://juantuc98:juantuc98@db-wimp.yeslm.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"))
+	//client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://localhost:27017"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	/* ctx, _ := context.WithTimeout(context.Background(), 10*time.Second) */
+	ctx := context.Background()
+	err = client.Connect(ctx)
+	db := client.Database("wimp")
+	col := db.Collection("switches")
+	opts := options.Update().SetUpsert(true)
 
+	for {
 		sites, err := uni.GetSites()
 		if err != nil {
 			log.Fatalln("Error:", err)
@@ -65,21 +77,7 @@ func main() {
 			s.Name = devices.USWs[i].Name
 			s.Version = devices.USWs[i].Version
 			s.Timestamp = time.Now()
-
 			fmt.Println(s)
-
-			/* Configuracion para insertar en la BD */
-			client, err := mongo.NewClient(options.Client().ApplyURI("mongodb+srv://juantuc98:juantuc98@db-wimp.yeslm.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"))
-			//client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://localhost:27017"))
-			if err != nil {
-				log.Fatal(err)
-			}
-			/* ctx, _ := context.WithTimeout(context.Background(), 10*time.Second) */
-			ctx := context.Background()
-			err = client.Connect(ctx)
-			db := client.Database("wimp")
-			col := db.Collection("switches")
-			opts := options.Update().SetUpsert(true)
 			filter := bson.D{{"mac", s.MAC}}
 			update := bson.D{
 				{"$set",
@@ -98,15 +96,16 @@ func main() {
 					},
 				},
 			}
+			result, err := col.UpdateOne(ctx, filter, update, opts)
 			if err != nil {
 				log.Fatal(err)
 			}
-			result, err := col.UpdateOne(ctx, filter, update, opts)
 
 			fmt.Println(result)
 		}
 
 		time.Sleep(60 * time.Second)
 	}
+	client.Disconnect(ctx)
 
 }

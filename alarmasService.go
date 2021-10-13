@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/unpoller/unifi"
@@ -12,6 +14,7 @@ import (
 )
 
 type alarma struct {
+	Mac       string    `bson:"mac,omitempty,minsize"`
 	Evento    string    `bson:"evento,omitempty,minsize"`
 	Mensaje   string    `bson:"mensaje,omitempty,minsize"`
 	Timestamp time.Time `bson:"timestamp,omitempty,minsize"`
@@ -31,6 +34,8 @@ func main() {
 		log.Fatalln("Error:", err)
 	}
 
+	/* Configuracion para insertar en la BD */
+	//			client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://localhost:27017"))
 	client, err := mongo.NewClient(options.Client().ApplyURI("mongodb+srv://juantuc98:juantuc98@db-wimp.yeslm.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"))
 	if err != nil {
 		log.Fatal(err)
@@ -55,15 +60,19 @@ func main() {
 			log.Fatalln("Error:", err)
 		}
 
-		/* Configuracion para insertar en la BD */
-		//			client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://localhost:27017"))
-
 		for i := 0; i < len(alarmas); i++ {
 			var a alarma
 			a.Evento = alarmas[i].Key
 			a.Mensaje = alarmas[i].Msg
 			a.Timestamp = alarmas[i].Datetime
-
+			/* Extraemos la MAC que esta en [] */
+			re := regexp.MustCompile(`\[([^\[\]]*)\]`)
+			submatchall := re.FindAllString(a.Mensaje, -1)
+			for _, elemento := range submatchall {
+				elemento = strings.Trim(elemento, "[")
+				elemento = strings.Trim(elemento, "]")
+				a.Mac = elemento
+			}
 			result, err := col.InsertOne(ctx, a)
 			if err != nil {
 				fmt.Println(err)

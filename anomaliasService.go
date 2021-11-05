@@ -46,7 +46,6 @@ func main() {
 	}
 
 	for {
-
 		sites, err := uni.GetSites()
 		if err != nil {
 			log.Fatalln("Error:", err)
@@ -57,22 +56,24 @@ func main() {
 			log.Fatalln("Error:", err)
 		}
 
+		tiempoActual := time.Now()
+		politicaInsercion := tiempoActual.AddDate(0, -1, 0)
+
 		for i := 0; i < len(anomalias); i++ {
-			var a anomalia
-			a.Datetime = anomalias[i].Datetime
-			a.Anomaly = anomalias[i].Anomaly
-			a.DeviceMAC = anomalias[i].DeviceMAC
-
-			result, err := col.InsertOne(ctx, a)
-			if err != nil {
-				fmt.Println(err)
+			if anomalias[i].Datetime.After(politicaInsercion) {
+				var a anomalia
+				a.Datetime = anomalias[i].Datetime
+				a.Anomaly = anomalias[i].Anomaly
+				a.DeviceMAC = anomalias[i].DeviceMAC
+				result, err := col.InsertOne(ctx, a)
+				if err != nil {
+					fmt.Println(err)
+				}
+				fmt.Println(result)
 			}
-			fmt.Println(result)
-
 		}
 		time.Sleep(60 * time.Second)
 	}
-	//Cerrar coneccion mongos
 	err = client.Disconnect(ctx)
 
 }

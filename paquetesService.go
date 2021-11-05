@@ -4,14 +4,15 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/google/gopacket"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcap"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 var (
@@ -39,6 +40,17 @@ type paquete struct {
 	Timestamp time.Time `bson:"timestamp,omitempty,minsize"`
 }
 
+func match(s string) string {
+	i := strings.Index(s, "(")
+	if i >= 0 {
+		j := strings.Index(s[i:], ")")
+		if j >= 0 {
+			return s[i+1 : j+i]
+		}
+	}
+	return ""
+}
+
 func main() {
 
 	/* Abrimos el dispositivo */
@@ -63,7 +75,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	/* 		ctx, _ := context.WithTimeout(context.Background(), 10*time.Second) */
 	ctx := context.Background()
 	err = client.Connect(ctx)
 	db := client.Database("wimp")
@@ -83,17 +94,44 @@ func main() {
 			p.SrcMac = ethernetPacket.SrcMAC.String()
 			p.DstMac = ethernetPacket.DstMAC.String()
 			p.ProtoIp = ethernetPacket.EthernetType.String()
+			if p.ProtoIp != "IPv4" && p.ProtoIp != "IPv6" {
+				/* Por la VLAN que usa Dot1Q */
+				dotlayer := packet.Layer(layers.LayerTypeDot1Q)
+				if dotlayer != nil {
+					dot, _ := dotlayer.(*layers.Dot1Q)
+					if dot.Type.String() == "IPv6" || dot.Type.String() == "IPv4" {
+						p.ProtoIp = dot.Type.String()
+					}
+				}
+			}
 			p.Length = packet.Metadata().CaptureLength
 			p.Timestamp = packet.Metadata().Timestamp
 		}
 
-		/* Internet */
-		ipLayer := packet.Layer(layers.LayerTypeIPv4)
-		if ipLayer != nil {
-			ip, _ := ipLayer.(*layers.IPv4)
-			p.SrcIp = ip.SrcIP.String()
-			p.DstIp = ip.DstIP.String()
-			p.ProtoTp = ip.Protocol.String()
+		if p.ProtoIp == "IPv4" {
+			/* Internet */
+			ipLayer := packet.Layer(layers.LayerTypeIPv4)
+			if ipLayer != nil {
+				ip, _ := ipLayer.(*layers.IPv4)
+				p.SrcIp = ip.SrcIP.String()
+				p.DstIp = ip.DstIP.String()
+				if ip.NextLayerType().String() == "TCP" || ip.NextLayerType().String() == "UDP" {
+					p.ProtoTp = ip.NextLayerType().String()
+				}
+
+			}
+		}
+
+		if p.ProtoIp == "IPv6" {
+			ipLayer := packet.Layer(layers.LayerTypeIPv6)
+			if ipLayer != nil {
+				ip, _ := ipLayer.(*layers.IPv6)
+				p.SrcIp = ip.SrcIP.String()
+				p.DstIp = ip.DstIP.String()
+				if ip.NextLayerType().String() == "TCP" || ip.NextLayerType().String() == "UDP" {
+					p.ProtoTp = ip.NextLayerType().String()
+				}
+			}
 		}
 
 		/* Transporte */
@@ -103,23 +141,35 @@ func main() {
 				tcp, _ := transportLayer.(*layers.TCP)
 				p.SrcTp = tcp.SrcPort.String()
 				p.DstTp = tcp.DstPort.String()
-				p.ProtoApp = tcp.NextLayerType().String()
+				if tcp.DstPort.String() == "443(https)" || tcp.SrcPort.String() == "443(https)" {
+					p.ProtoApp = "https"
+				} else if tcp.NextLayerType().String() == "Payload" || tcp.NextLayerType().String() == "" {
+					p.ProtoApp = match(p.DstTp)
+					if p.ProtoApp == "Payload" || p.ProtoApp == "" {
+						p.ProtoApp = match(p.SrcTp)
+					}
+				} else {
+					p.ProtoApp = tcp.NextLayerType().String()
+				}
 			}
 
 			if transportLayer.LayerType() == layers.LayerTypeUDP {
 				udp, _ := transportLayer.(*layers.UDP)
-				p.SrcTp = udp.SrcPort.String()
-				p.DstTp = udp.DstPort.String()
-				p.ProtoApp = udp.NextLayerType().String()
+				if udp.NextLayerType().String() == "Payload" || udp.NextLayerType().String() == "" {
+					p.ProtoApp = match(p.DstTp)
+					if p.ProtoApp == "Payload" || p.ProtoApp == "" {
+						p.ProtoApp = match(p.SrcTp)
+					}
+				} else {
+					p.ProtoApp = udp.NextLayerType().String()
+				}
 			}
 		}
-		 //fmt.Println(packet)
-		//fmt.Println(p)
+
 		result, err := col.InsertOne(ctx, p)
 		if err != nil {
 			fmt.Println(err)
 		}
-
 		fmt.Println(result)
 	}
 }
